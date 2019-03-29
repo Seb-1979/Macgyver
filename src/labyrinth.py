@@ -2,12 +2,7 @@
 
 import os, random, math, re
 from pygame.math import Vector2 as vect
-
-WALL = 0
-GROUND = 1
-MACGYVER = 2
-GUARDIAN = 3
-SIDE = 15
+import constants
 
 class Labyrinth:
 	def __init__(self):
