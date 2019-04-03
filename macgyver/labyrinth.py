@@ -1,11 +1,11 @@
 # coding : utf-8
 
 import os
-import random
-import math
-import re
+from random import shuffle, choice, seed
+from math import gcd
+from re import compile, IGNORECASE
 from pygame.math import Vector2 as vect
-import ./constants
+from constants import *
 
 
 class Labyrinth:
@@ -17,7 +17,7 @@ class Labyrinth:
         # une ligne du fichier contient exactement 15 chiffres de valeur 0 ou
         # 1. Les espaces en fin de ligne sont ignorés
         #
-        pattern = re.compile(r"^[01]{15}\s*$")
+        pattern = compile(r"^[01]{15}\s*$")
         # indique le nombre lignes lues qui doivent être de 15. Après ces
         # lignes, il peut éventuellement y avoir des espaces qui seront
         # ignorés.
@@ -39,19 +39,22 @@ class Labyrinth:
         return True
 
     def save_map(self):
-        dir_maps = "../maps/"
-        if not os.access(dir_maps, os.F_OK):
-            os.mkdir(dir_maps)
-            fname = dirmaps + "map_1.txt"
+        current_dir = os.path.dirname(__file__)
+        maps_dir = os.path.join(current_dir, "maps")
+        if not os.access(maps_dir, os.F_OK):
+            os.mkdir(maps_dir)
+            fname = os.path.join(maps_dir, "map_1.txt")
         else:
-            pattern = re.compile(r"^map_(?P<num>\d+)\.txt$")
-            list_file = [pattern.match(f) for f in os.listdir(dir_maps)]
+            pattern = compile(r"^map_(?P<num>\d+)\.txt$")
+            list_file = [pattern.match(f) for f in os.listdir(maps_dir)]
             num = sorted([int(f.group("num")) for f in list_file if f])
             print(num)
             if num:
-                fname = dir_maps + "map_" + str(num[-1]+1) + ".txt"
+                fname = os.path.join(maps_dir, "map_" +
+                                     str(num[-1]+1) +
+                                     ".txt")
             else:
-                fname = dir_maps + "map_1.txt"
+                fname = os.path.join(maps_dir, "map_1.txt")
 
         with open(fname, mode='w', encoding='utf-8') as file:
             for r in range(SIDE):
@@ -81,24 +84,24 @@ class Labyrinth:
         return rx, ry
 
     def _frequency(self, v):
-        gcd = math.gcd(int(v[0]), int(v[1]))
+        d = gcd(int(v[0]), int(v[1]))
         s = self._symbol(v)
         if s == (1, 1):
-            return (0, 0, int(v[1]/gcd), int(v[0]/gcd))
+            return (0, 0, int(v[1]/d), int(v[0]/d))
         if s == (1, 0):
             return (1, 0, 1, 2)
         if s == (1, -1):
-            return (int(-v[1]/gcd), 0, 0, int(v[0]/gcd))
+            return (int(-v[1]/d), 0, 0, int(v[0]/d))
         if s == (0, 1):
             return (0, 1, 2, 1)
         if s == (0, -1):
             return (2, 1, 0, 1)
         if s == (-1, 1):
-            return (0, int(-v[0]/gcd), int(v[1]/gcd), 0)
+            return (0, int(-v[0]/d), int(v[1]/d), 0)
         if s == (-1, 0):
             return (1, 2, 1, 0)
         if s == (-1, -1):
-            return (int(-v[1]/gcd), int(-v[0]/gcd), 0, 0)
+            return (int(-v[1]/d), int(-v[0]/d), 0, 0)
 
     ''' Création d'un chemin aléatoire entre les points p1 et p2
         p1 (list): coordonnées de départ dans self.map
@@ -125,8 +128,8 @@ class Labyrinth:
                 if p[0] >= 0 and p[0] <= 14 and p[1] >= 0 and p[1] <= 14:
                     tmp.extend([p for _ in range(f)])
             mv = tmp
-            random.shuffle(mv)
-            pos = random.choice(mv)
+            shuffle(mv)
+            pos = choice(mv)
             self.map[pos[0]][pos[1]] = GROUND
             current_pos = vect(pos[0], pos[1])
 
@@ -139,7 +142,7 @@ class Labyrinth:
     '''
     def autocreate_map(self):
         self.map = [[WALL for _ in range(SIDE)] for _ in range(SIDE)]
-        random.seed()
+        seed()
 
         list_pos = [
             [[0, 0], [14, 14]],
@@ -192,7 +195,7 @@ def main():
 
     answer = input("Faut-il enregistrer le labyrinthe dans un fichier"
                    "[O]ui : ")
-    pattern = re.compile(r"(o$)|oui", re.IGNORECASE)
+    pattern = compile(r"(o$)|oui", IGNORECASE)
     if pattern.match(answer):
         laby.save_map()
 
