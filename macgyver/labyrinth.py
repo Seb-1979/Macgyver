@@ -7,17 +7,16 @@ from re import compile, IGNORECASE
 from pygame.math import Vector2 as vect
 from constants import *
 
-
 class Labyrinth:
     def __init__(self):
         self.map = []
 
     def load_map(self, fname):
-        self.map = []
+        self.map.clear()
         # une ligne du fichier contient exactement 15 chiffres de valeur 0 ou
         # 1. Les espaces en fin de ligne sont ignorés
         #
-        pattern = compile(r"^[01]{15}\s*$")
+        pattern = compile(r"^[01]{15}$")
         # indique le nombre lignes lues qui doivent être de 15. Après ces
         # lignes, il peut éventuellement y avoir des espaces qui seront
         # ignorés.
@@ -26,16 +25,20 @@ class Labyrinth:
         with open(fname, "r") as file:
             try:
                 for line in file:
+                    line = line.rstrip()
                     if pattern.match(line):
-                        list = line.rstrip().split()
+                        list = line.split()
                         self.map.append([int(c) for c in list])
                         num_row += 1
-                    elif num_row != SIDE or (
-                         num_row == SIDE and not line.isspace()):
+                    elif num_row > 15:
+                        self.map.clear()
+                        return False
+                    else:
+                        self.map.clear()
                         return False
             except Exception:
-                if num_row != SIDE:
-                    return False
+                self.map.clear()
+                return False
         return True
 
     def save_map(self):
@@ -57,8 +60,8 @@ class Labyrinth:
                 fname = os.path.join(maps_dir, "map_1.txt")
 
         with open(fname, mode='w', encoding='utf-8') as file:
-            for r in range(SIDE):
-                for c in range(SIDE):
+            for r in range(15):
+                for c in range(15):
                     file.write(str(self.map[r][c]))
                 file.write("\n")
         print("Le labyrinthe a été sauvegardé dans le fichier ",
@@ -141,7 +144,7 @@ class Labyrinth:
         supérieur gauche et la sortie à l'angle opposé
     '''
     def autocreate_map(self):
-        self.map = [[WALL for _ in range(SIDE)] for _ in range(SIDE)]
+        self.map = [[WALL for _ in range(15)] for _ in range(15)]
         seed()
 
         list_pos = [
@@ -158,6 +161,9 @@ class Labyrinth:
             self._create_way(start, end)
 
     def print_map(self):
+        if not self.map:
+            return
+
         s = "   "
         for r in range(14):
             s = s + "{:2}".format(str(r)) + " "
@@ -179,8 +185,8 @@ class Labyrinth:
 
 def main():
     laby = Labyrinth()
-    laby.autocreate_map()
-    laby.print_map()
+#    laby.autocreate_map()
+#    laby.print_map()
 
     # nb_wall = 0
     # nb_ground = 0
@@ -193,12 +199,14 @@ def main():
     # print("Nombre de murs : {}, nombre de dalles : {}"\
     #       .format(nb_wall, nb_ground))
 
-    answer = input("Faut-il enregistrer le labyrinthe dans un fichier"
-                   "[O]ui : ")
-    pattern = compile(r"(o$)|oui", IGNORECASE)
-    if pattern.match(answer):
-        laby.save_map()
+#    answer = input("Faut-il enregistrer le labyrinthe dans un fichier"
+#                   "[O]ui : ")
+#    pattern = compile(r"(o$)|oui", IGNORECASE)
+#    if pattern.match(answer):
+#        laby.save_map()
 
+    ret = laby.load_map("maps/map_1.txt")
+    print(ret)
 
 if __name__ == "__main__":
     main()
