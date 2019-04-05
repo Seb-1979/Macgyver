@@ -2,46 +2,67 @@
 import pygame as pg
 from pygame.locals import *
 import os
-import constants
-import labyrinth
+from constants import *
 
-SIDE_SPRITE = 50
-NUM_SPRITE = SIDE
-SCREEN_SIZE = (SIDE_SPRITE*NUM_SPRITE, SIDE_SPRITE*NUM_SPRITE)
-BACKGROUND_COLOR = (255, 255, 255)
-PIECE_COLOR = (0, 0, 0)
-CAPTION = "Macgyver"
+class Items(pg.sprite.Sprite):
+    def __init__(self, images, x, y):
+        pg.sprite.Sprite.__init__(self)
+        self.image = pg.Surface(ITEMS_SIZE)
+        self.image.fill((255, 255, 255, 255))
+        self.rect = self.image.get_rect()
+        self.rect.move_ip(x, y)
+        self.images = images
+        self.items_found = []
+        self.items_change = False
 
-class GameUI:
+    def set_item(self, item):
+        self.items_found.append(item)
+        self.items_change = True
 
-	def __init__(self, screen):
-		self.images = []
-		self.images.append(pg.image.load("../textures/wall.jpg").convert())
-		self.images.append(pg.image.load("../textures/ground.jpg").convert())
-		self.laby = Labyrinth()
-	
-	def select_map(self)
-		maps_dir = "../maps/"
-		for file in os.listdir(maps_dir):
-			try:
-				laby.load_map(file)
-		for r in range(NUM_SPRITE):
-			for c in range(NUM_SPRITE):
-				if MAP[r][c] == MapObj.ground:
-					screen.blit(self.image, (c * SIDE_SPRITE, r * SIDE_SPRITE))
+    def update(self):
+        if self.items_change:
+            self.image.blit(self.images[self.items_found[-1]],
+                                        (0, (len(self.items_found) - 1) * SPRITE_SIDE))
+            self.items_change = False
 
 
-def main()		
-	pg.init()
-	screen = pg.display.set_mode(SCREEN_SIZE)
-	pg.display.set_caption(CAPTION)
-	background = Background(screen)
-	pg.display.flip()
+def main():
+    pg.init()
+    screen = pg.display.set_mode(SCREEN_SIZE)
+    pg.display.set_caption("Affichage des items")
 
-	clock = pg.time.Clock()
-	loop = True
-	while loop:
-		clock.tick(60)
-		for evt in pg.event.get():
-			if evt.type == QUIT:
-				loop = False
+    images = []
+    images.append(pg.image.load("images/seringue.png").convert_alpha())
+    images.append(pg.image.load("images/ether.png").convert_alpha())
+    images.append(pg.image.load("images/tube.png").convert_alpha())
+    items = Items(images, BOARD_SIDE, 0)
+    gp_items = pg.sprite.Group(items)
+
+    pg.display.update()
+
+    it = 0
+
+    clock = pg.time.Clock()
+    loop = True
+    while loop:
+        clock.tick(60)
+        for evt in pg.event.get():
+            if evt.type == QUIT:
+                loop = False
+            elif evt.type == KEYDOWN:
+                if evt.key == K_RETURN:
+                    if it == 0:
+                        items.set_item(SYRINGE)
+                        it += 1
+                    elif it == 1:
+                        items.set_item(ETHER)
+                        it += 1
+                    elif it == 2:
+                        items.set_item(TUBE)
+                        it += 1
+        gp_items.update()
+        gp_items.draw(screen)
+        pg.display.update()
+
+if __name__ == '__main__':
+    main()
