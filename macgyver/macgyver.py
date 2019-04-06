@@ -6,15 +6,7 @@ import os
 from constants import *
 from game_items import *
 from game_board import *
-#from labyrinth import *
-
-def load_map(fname):
-    map = []
-    with open(fname, "r") as file:
-        for line in file:
-            line = line.rstrip()
-            map.append([int(c) for c in line])
-    return map
+from labyrinth import *
 
 def main():
     pg.init()
@@ -22,11 +14,9 @@ def main():
     pg.display.set_caption(CAPTION)
     pg.event.set_allowed([pg.QUIT, pg.KEYDOWN, pg.USEREVENT])
 
-#    laby = Labyrinth()
-#    if not laby.load_map("maps/map_1.txt"):
-#        laby.autocreate_map()
-#    laby.print_map()
-    map = load_map("maps/map_1.txt")
+    laby = Labyrinth()
+    if not laby.load_map("maps/map_1.txt"):
+        laby.autocreate_map()
 
     images = []
     images.append(pg.image.load("images/seringue.png").convert_alpha())
@@ -38,7 +28,7 @@ def main():
     player = GamePlayer(pg.image.load("images/MacGyver.png").convert_alpha(), 0, 0)
     guard = SpriteBase(pg.image.load("images/Guardian.png").convert_alpha(), 14, 14)
     gp_walls = pg.sprite.Group()
-    board = GameBoard(map, gp_walls)
+    board = GameBoard(laby.map, gp_walls)
 
     gp_board_all = pg.sprite.Group([board, player, guard])
 

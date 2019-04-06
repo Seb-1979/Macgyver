@@ -27,8 +27,7 @@ class Labyrinth:
                 for line in file:
                     line = line.rstrip()
                     if pattern.match(line):
-                        list = line.split()
-                        self.map.append([int(c) for c in list])
+                        self.map.append([int(c) for c in line])
                         num_row += 1
                     elif num_row > 15:
                         self.map.clear()
@@ -206,6 +205,7 @@ def main():
 #        laby.save_map()
 
     ret = laby.load_map("maps/map_1.txt")
+    laby.print_map()
     print(ret)
 
 if __name__ == "__main__":
