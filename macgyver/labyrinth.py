@@ -4,23 +4,38 @@ import os
 from random import shuffle, choice, seed
 from math import gcd
 from re import compile, IGNORECASE
+
 from pygame.math import Vector2 as vect
+
 from constants import *
 
+
 class Labyrinth:
+    ''' This class manages the creation, saving and loading of a maze for the
+        game.
+
+        :ivar map: Two dimensional table indicating the position of all walls
+                   by the value "WALL" and the floor by the value "GROUND" in
+                   the labyrinth.
+        :vartype map: nested list in a list
+    '''
     def __init__(self):
         self.map = []
 
     def load_map(self, fname):
+        ''' This function initializes the map variable from the data saved in
+            the "fname" file.
+
+            :param fname: name of the file to load
+            :type fname: string
+            :return: returns True if the file loading went well
+            :rtype: boolean
+        '''
         self.map.clear()
-        # une ligne du fichier contient exactement 15 chiffres de valeur 0 ou
-        # 1. Les espaces en fin de ligne sont ignorés
-        #
+        # a line in the file contains exactly 15 digits of value 0 or 1.
+        # Spaces at the end of the line are ignored
         pattern = compile(r"^[01]{15}$")
-        # indique le nombre lignes lues qui doivent être de 15. Après ces
-        # lignes, il peut éventuellement y avoir des espaces qui seront
-        # ignorés.
-        #
+        # indicates the number of lines read that must be 15
         num_row = 0
         with open(fname, "r") as file:
             try:
@@ -41,6 +56,12 @@ class Labyrinth:
         return True
 
     def save_map(self):
+        ''' Save the map array to a file. The recording directory is maps. The
+            files are named map_X.txt where X is a number.
+        '''
+        if not self.map:
+            return False
+
         current_dir = os.path.dirname(__file__)
         maps_dir = os.path.join(current_dir, "maps")
         if not os.access(maps_dir, os.F_OK):
@@ -50,7 +71,6 @@ class Labyrinth:
             pattern = compile(r"^map_(?P<num>\d+)\.txt$")
             list_file = [pattern.match(f) for f in os.listdir(maps_dir)]
             num = sorted([int(f.group("num")) for f in list_file if f])
-            print(num)
             if num:
                 fname = os.path.join(maps_dir, "map_" +
                                      str(num[-1]+1) +
@@ -63,16 +83,16 @@ class Labyrinth:
                 for c in range(15):
                     file.write(str(self.map[r][c]))
                 file.write("\n")
-        print("Le labyrinthe a été sauvegardé dans le fichier ",
-              fname, " avec succés.")
 
-    ''' Retoune un tuple contenant le signe de x et y
-        le signe de a est donné par :
-        -1 si a < 0
-        0 si a = 0
-        1 si a > 0
-    '''
+        return True
+
     def _symbol(self, v):
+        ''' Returns a tuple containing an indicator of the vector sign
+            v = (rx, ry). The sign of a number N is given by:
+                 -1 if N < 0
+                 0 if N = 0
+                 1 if N > 0
+        '''
         if v[0] == 0:
             rx = 0
         else:
@@ -86,6 +106,14 @@ class Labyrinth:
         return rx, ry
 
     def _frequency(self, v):
+        ''' v is a director vector that is determined to have a probability
+            of taking one of the four possible directions rather than another.
+            The desired result is a tuple noted (Fl, Fu, Fr, Fd) where each
+            element is the realization frequency to go to the left (Fl), to
+            the top (Fu), to the right (Fr) and to the bottom (Fd) ). Noting
+            F = Fl + Fu + Fr + Fd, the equivalence relation between frequency
+            and probability is given by Pi = Fi / F where i = {l, u, r, d}.
+        '''
         d = gcd(int(v[0]), int(v[1]))
         s = self._symbol(v)
         if s == (1, 1):
@@ -105,29 +133,32 @@ class Labyrinth:
         if s == (-1, -1):
             return (int(-v[1]/d), int(-v[0]/d), 0, 0)
 
-    ''' Création d'un chemin aléatoire entre les points p1 et p2
-        p1 (list): coordonnées de départ dans self.map
-        p2 (list): coordonnées d'arrivée dans self.map
-    '''
     def _create_way(self, p1, p2):
-        current_pos = vect(p1)
-        end_pos = vect(p2)
-        # Le tuple delta contient respectivement les vecteurs directeurs pour
-        # aller à gauche, en haut, à droite et en bas. Ces vecteurs permettent
-        # de se déplacer dans self.map
-        #
+        ''' Creating a random path between points p1 and p2. The coordinates
+            are given in a list.
+        '''
+        current_pos = vect(p1)  # current position
+        end_pos = vect(p2)  # final position
+        # The delta tuple contains normative vectors, respectively, to go to
+        # the left, top, right, and bottom. These vectors allow to move in
+        # self.map
         delta = (vect(0, -1), vect(-1, 0), vect(0, 1), vect(1, 0))
 
-        # nb_tours = 0
         while current_pos != end_pos:
-            Dv = end_pos - current_pos  # direction vector
-
+            # vector director between point current_pos and end_pos
+            Dv = end_pos - current_pos
             freq = self._frequency(Dv)
+            # mv contains a tuple list for each possible direction. Each
+            # tuple contains the new current position and its frequency of
+            # realization.
             mv = [(eval((current_pos+delta[k]).__str__()), freq[k])
                   for k in range(4) if freq[k]]
-            tmp = []
+            tmp = []  # list containing all possible achievements
             for p, f in mv:
-                if p[0] >= 0 and p[0] <= 14 and p[1] >= 0 and p[1] <= 14:
+                # we check that the new position is well included in map. If
+                # this condition is respected, we add f (frequency) times the
+                # position p in tmp
+                if 0 <= p[0] <= 14 and 0 <= p[1] <= 14:
                     tmp.extend([p for _ in range(f)])
             mv = tmp
             shuffle(mv)
@@ -135,17 +166,15 @@ class Labyrinth:
             self.map[pos[0]][pos[1]] = GROUND
             current_pos = vect(pos[0], pos[1])
 
-            # nb_tours += 1
-
-        # print("Nombre de tours : ", nb_tours)
-
-    ''' Création d'un labyrinthe dont le point de départ est le coin
-        supérieur gauche et la sortie à l'angle opposé
-    '''
     def autocreate_map(self):
+        ''' Create a labyrinth with the starting point at the top left corner
+            and the exit at the opposite corner
+        '''
         self.map = [[WALL for _ in range(15)] for _ in range(15)]
         seed()
 
+        # The creation of paths is done between points of coordinates
+        # list_pos[i][0] and list_pos[i][1]. This choice is arbitrary.
         list_pos = [
             [[0, 0], [14, 14]],
             [[0, 4], [14, 10]],
@@ -155,11 +184,13 @@ class Labyrinth:
             [[10, 0], [4, 14]]
         ]
 
+        # Marking a path for each list_pos element
         for start, end in list_pos:
             self.map[start[0]][start[1]] = GROUND
             self._create_way(start, end)
 
     def print_map(self):
+        ''' Labyrinth display on the console '''
         if not self.map:
             return
 
@@ -184,29 +215,27 @@ class Labyrinth:
 
 def main():
     laby = Labyrinth()
-#    laby.autocreate_map()
-#    laby.print_map()
-
-    # nb_wall = 0
-    # nb_ground = 0
-    # for r in laby.map:
-    #     for c_r in r:
-    #         if c_r == GROUND:
-    #             nb_ground += 1
-    #         else:
-    #             nb_wall += 1
-    # print("Nombre de murs : {}, nombre de dalles : {}"\
-    #       .format(nb_wall, nb_ground))
-
-#    answer = input("Faut-il enregistrer le labyrinthe dans un fichier"
-#                   "[O]ui : ")
-#    pattern = compile(r"(o$)|oui", IGNORECASE)
-#    if pattern.match(answer):
-#        laby.save_map()
-
-    ret = laby.load_map("maps/map_1.txt")
+    laby.autocreate_map()
     laby.print_map()
-    print(ret)
+
+    nb_wall = 0
+    nb_ground = 0
+    for r in laby.map:
+        for c_r in r:
+            if c_r == GROUND:
+                nb_ground += 1
+            else:
+                nb_wall += 1
+    print("Number of walls : {}, number of soil elements : {}"
+          .format(nb_wall, nb_ground))
+
+    answer = input("Would you like to save the maze in a file [Y]es : ")
+    pattern = compile(r"(y$)|yes", IGNORECASE)
+    if pattern.match(answer):
+        ret = laby.save_map()
+        if ret:
+            print("saved file")
+
 
 if __name__ == "__main__":
     main()

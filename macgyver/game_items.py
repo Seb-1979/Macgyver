@@ -1,28 +1,48 @@
 # coding: utf-8
-import pygame as pg
-from pygame.locals import *
-import os
-from constants import *
 
-class Items(pg.sprite.Sprite):
+import pygame as pg
+
+import os
+
+from constants import ITEMS_SIZE, SPRITE_SIDE
+
+
+class ItemsCollected(pg.sprite.Sprite):
+    ''' This class displays a border on the right of the game board. This is
+        used to display the objects retrieved by the player. It inherits the
+        pygame.sprite.Sprite class
+    '''
     def __init__(self, images, x, y):
         pg.sprite.Sprite.__init__(self)
         self.image = pg.Surface(ITEMS_SIZE)
+        # the border is under white background
         self.image.fill((255, 255, 255, 255))
         self.rect = self.image.get_rect()
         self.rect.move_ip(x, y)
         self.images = images
-        self.items_found = []
+        self.items_found = []  # list of objects recovered by the player
+        # indicates when an object is retrieved by True
         self.items_change = False
 
     def set_item(self, item):
+        ''' Ajout de l'objet que le joeur à récupérer dans le labyrinthe.
+
+            :param item: Valeur de l'objet récupéré. ça vaut SYRINGE, ETHER
+                         ou TUBE
+            :type item: int
+        '''
         self.items_found.append(item)
         self.items_change = True
 
     def update(self):
+        ''' A function called by the sprite group that contains the
+            ItemCollected instance. It is necessary to update the display of
+            when an object is added.
+        '''
         if self.items_change:
+            # View the last object retrieved
             self.image.blit(self.images[self.items_found[-1]],
-                                        (0, (len(self.items_found) - 1) * SPRITE_SIDE))
+                            (0, (len(self.items_found) - 1) * SPRITE_SIDE))
             self.items_change = False
 
 
@@ -35,7 +55,7 @@ def main():
     images.append(pg.image.load("images/seringue.png").convert_alpha())
     images.append(pg.image.load("images/ether.png").convert_alpha())
     images.append(pg.image.load("images/tube.png").convert_alpha())
-    items = Items(images, BOARD_SIDE, 0)
+    items = ItemsCollected(images, BOARD_SIDE, 0)
     gp_items = pg.sprite.Group(items)
 
     pg.display.update()
@@ -64,5 +84,9 @@ def main():
         gp_items.draw(screen)
         pg.display.update()
 
+
 if __name__ == '__main__':
+    from pygame.locals import *
+    from constants import SCREEN_SIZE, BOARD_SIDE, SYRINGE, ETHER, TUBE
+
     main()
